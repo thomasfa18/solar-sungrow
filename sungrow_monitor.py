@@ -156,7 +156,7 @@ def main():
     global inverter
     inverter = {}
     load_register(modmap.sungrow_registers)
-    if len(inverter) > 0:
+    if len(inverter) > 0 and inverter["5031 - Total active power"] <90000: #sometimes the modbus give back a weird value
       power_gen.append(inverter["5031 - Total active power"])
     # we are done with the connection for now so close it
     client.close()
