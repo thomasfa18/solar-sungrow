@@ -62,7 +62,11 @@ client = ModbusTcpClient(config.inverter_ip,
                          port=config.inverter_port)
 
 inverter = {}
-power_gen = []
+#vars to hold window of reads for calculated values
+energy_gen = []
+energy_con = []
+voltage_1 = []
+voltage_2 = []
 bus = json.loads(modmap.scan)
 
 def load_register(registers):
@@ -72,7 +76,7 @@ def load_register(registers):
   #print "Connect"
   #moved connect to here so it reconnect after a failure
   client.connect()
-  #iterate through each avaialble register in the modbus map
+  #iterate through each available register in the modbus map
   for thisrow in registers:
     name = thisrow[0]
     startPos = thisrow[1]-1 #offset starPos by 1 as zeromode = true seems to do nothing for client
@@ -156,26 +160,51 @@ def main():
     global inverter
     inverter = {}
     load_register(modmap.sungrow_registers)
-    if len(inverter) > 0 and inverter["5031 - Total active power"] <90000: #sometimes the modbus give back a weird value
-      power_gen.append(inverter["5031 - Total active power"])
-    # we are done with the connection for now so close it
+    if len(inverter) > 0: #only continue if we get a successful read
+      if inverter["5003 - Daily power yields"] <900: #sometimes the modbus give back a weird value
+        energy_gen.append(inverter["5003 - Daily power yields"])
+      if inverter["5011 - MPPT 1 voltage"] <9000: #sometimes the modbus give back a weird value
+        voltage_1.append(inverter["5011 - MPPT 1 voltage"])
+      if inverter["5013 - MPPT 2 voltage"] <9000: #sometimes the modbus give back a weird value
+        voltage_2.append(inverter["5013 - MPPT 2 voltage"])
+      #if config has elected to upload consumption data then we should store those registers if they are enabled
+      if config.upload_consumption:
+        if inverter["5097 - Daily import energy"] <9000: #sometimes the modbus give back a weird value
+          energy_con.append(inverter["5097 - Daily import energy"])
+      # we are done with the connection for now so close it
     client.close()
   except Exception as err:
     print "[ERROR] %s" % err
     client.close()
   #increment counter
   count+=1
-  if count >= (60/config.scan_interval) * config.upload_interval and len(power_gen) >= 1 : #possibly spawn thread here and instead make counter be every 5 mins
-    print "%d individual observations were made (out of %d attempts) over the last %d minutes averaging %d Watts" % (len(power_gen), count, count*config.scan_interval/60,sum(power_gen)/len(power_gen))
+  #change below to instead use the most recent daily cumulative power for pvoutput. time series really only important for onprem graphana
+  if count >= (60/config.scan_interval) * config.upload_interval and len(energy_gen) >= 1 : #possibly spawn thread here and instead make counter be every 5 mins
+    #daily generation can only increase so we only need to return the max/last value read
+    print "%d individual observations were made (out of %d attempts) over the last %d minutes. Daily generation is %d kW" % (len(energy_gen), count, count*config.scan_interval/60,max(energy_gen))
     count = 0
     now = datetime.datetime.now(timezone(config.timezone))
     try: #TODO functionize and thread this it would need to take in the powergen stuff, time could be done in the function and then it could be done as a thread
-      querystring = {"d":"%s" % now.strftime("%Y%m%d"),"t":"%s" % now.strftime("%H:%M"),"v2":"%s" % (sum(power_gen)/len(power_gen))}
-      #wipe the array for next run
-      del power_gen[:]
+      #average voltage to a single value for upload
+      if voltage_2 > 0:
+        v6 = ((sum(volatage_1)/len(voltage_1))+sum(voltage_2)/len(voltage_2))/2
+      else:
+        v6 = (sum(volatage_1)/len(voltage_1)
+      #v1 = energy generation, v3 = energy consumption, v6 = voltage
+      if config.upload_consumption:
+        querystring = {"d":"%s" % now.strftime("%Y%m%d"),"t":"%s" % now.strftime("%H:%M"),"v1":"%s" % max(energy_gen), "v3":"%s" % max(energy_con) ,"v6":"%s" % v6}
+      else:
+        querystring = {"d":"%s" % now.strftime("%Y%m%d"),"t":"%s" % now.strftime("%H:%M"),"v1":"%s" % max(energy_gen), "v6":"%s" % v6}
+      #wipe the arrays for next run
+      del energy_gen[:]
+      del voltage_1[:]
+      del voltage_2[:]
+      del v6
+      del energy_con[:]
+      #set headers and post data
       headers = {
         'X-Pvoutput-Apikey': "%s" % config.pv_api,
-        'X-Pvoutput-SystemId': "%s" %config.pv_sid,
+        'X-Pvoutput-SystemId': "%s" % config.pv_sid,
         'Content-Type': "application/x-www-form-urlencoded",
         'cache-control': "no-cache"
       }

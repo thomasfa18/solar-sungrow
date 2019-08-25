@@ -9,5 +9,6 @@ upload_interval = 5 #minutes
 pv_api = "your_api"
 pv_sid = "your_sid"
 pv_url = "https://pvoutput.org/service/r2/addstatus.jsp"
+upload_consumption = False
 # timezone settings
 timezone= "Australia/Sydney"
