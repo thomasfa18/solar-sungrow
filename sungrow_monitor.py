@@ -48,6 +48,7 @@ sungrow_moddatatype = {
   'STR16':8
   }
 
+#TODO: change this to be able to be overridden by a file in the config directory if config path has file import form there otherwise do the below
 # Load the modbus map from config
 modmap_file = "modbus-" + config.model
 modmap = __import__(modmap_file)
@@ -63,13 +64,22 @@ client = ModbusTcpClient(config.inverter_ip,
 
 inverter = {}
 power_gen = []
+power_con = []
+voltage_1 = []
+voltage_2 = []
+#if upload_consumption hasn't been defined in the config, then assume false. If its explicitly false let it be that, otherwise its true
+try:
+	config.upload_consumption
+except AttributeError:
+	upload = False
+else:
+	upload = config.upload_consumption
 bus = json.loads(modmap.scan)
 
 def load_register(registers):
   from pymodbus.payload import BinaryPayloadDecoder
   from pymodbus.constants import Endian
 
-  #print "Connect"
   #moved connect to here so it reconnect after a failure
   client.connect()
   #iterate through each avaialble register in the modbus map
@@ -156,9 +166,30 @@ def main():
     global inverter
     inverter = {}
     load_register(modmap.sungrow_registers)
-    if len(inverter) > 0 and inverter["5031 - Total active power"] <90000: #sometimes the modbus give back a weird value
-      power_gen.append(inverter["5031 - Total active power"])
-    # we are done with the connection for now so close it
+    if len(inverter) > 0: #only continue if we get a successful read
+      if inverter["5031 - Total active power"] <90000: #sometimes the modbus give back a weird value
+        power_gen.append(inverter["5031 - Total active power"])
+        print "Total active power = %s" % inverter["5031 - Total active power"]
+      else:
+        print "Didn't get a read for Daily Power"
+      if inverter["5011 - MPPT 1 voltage"] <9000: #sometimes the modbus give back a weird value
+        voltage_1.append(inverter["5011 - MPPT 1 voltage"])
+        print "MPPT 1 Voltage = %s" % inverter["5011 - MPPT 1 voltage"]
+      else:
+        print "Didn't get a read for MPPT 1 Voltage" 
+      if inverter["5013 - MPPT 2 voltage"] <9000: #sometimes the modbus give back a weird value
+        voltage_2.append(inverter["5013 - MPPT 2 voltage"])
+        print "MPPT 2 Voltage = %s" % inverter["5013 - MPPT 2 voltage"]
+      else:
+        print "Didn't get a read for MPPT 2 Voltage"
+      #if config has elected to upload consumption data then we should store those registers if they are enabled
+      if upload:
+        if inverter["5097 - Daily import energy"] <50000: #sometimes the modbus give back a weird value
+          power_con.append(inverter["5097 - Daily import energy"])
+          print "Daily import energy = %s" % inverter["5097 - Daily import energy"]
+        else: 
+          print "Didn't get a read for Daily Import Energy"
+      # we are done with the connection for now so close it
     client.close()
   except Exception as err:
     print "[ERROR] %s" % err
@@ -169,10 +200,24 @@ def main():
     print "%d individual observations were made (out of %d attempts) over the last %d minutes averaging %d Watts" % (len(power_gen), count, count*config.scan_interval/60,sum(power_gen)/len(power_gen))
     count = 0
     now = datetime.datetime.now(timezone(config.timezone))
-    try: #TODO functionize and thread this it would need to take in the powergen stuff, time could be done in the function and then it could be done as a thread
-      querystring = {"d":"%s" % now.strftime("%Y%m%d"),"t":"%s" % now.strftime("%H:%M"),"v2":"%s" % (sum(power_gen)/len(power_gen))}
+    try: 
+      #average voltage to a single value for upload
+      if voltage_2 > 0:
+        v6 = ((sum(voltage_1)/len(voltage_1))+sum(voltage_2)/len(voltage_2))/2
+      else:
+        v6 = sum(voltage_1)/len(voltage_1)
+      #v2 = power generation, v4 = power consumption, v6 = voltage
+      if upload:
+        querystring = {"d":"%s" % now.strftime("%Y%m%d"),"t":"%s" % now.strftime("%H:%M"),"v2":"%s" % (sum(power_gen)/len(power_gen)), "v4":"%s" % (sum(power_con)/len(power_con)) ,"v6":"%s" % v6}
+      else:
+        querystring = {"d":"%s" % now.strftime("%Y%m%d"),"t":"%s" % now.strftime("%H:%M"),"v2":"%s" % (sum(power_gen)/len(power_gen)), "v6":"%s" % v6}
+        
       #wipe the array for next run
       del power_gen[:]
+      del voltage_1[:]
+      del voltage_2[:]
+      del v6
+      del power_con[:]
       headers = {
         'X-Pvoutput-Apikey': "%s" % config.pv_api,
         'X-Pvoutput-SystemId': "%s" %config.pv_sid,

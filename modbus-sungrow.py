@@ -22,9 +22,9 @@ sungrow_registers = [
   #['5006 - Total running time',5006,'U32','Duration'], #hours
   #['5008 - Internal temperature',5008,'S16','FIX1'], #C
   #['5009 - Total apparent power',5009,'U32','FIX0'], #VA
-  #['5011 - MPPT 1 voltage',5011,'U16','FIX1'], #0.1V
+  ['5011 - MPPT 1 voltage',5011,'U16','FIX1'], #0.1V
   #['5012 - MPPT 1 current',5012,'U16','FIX1'], #0.1A
-  #['5013 - MPPT 2 voltage',5013,'U16','FIX1'], #0.1V
+  ['5013 - MPPT 2 voltage',5013,'U16','FIX1'], #0.1V
   #['5014 - MPPT 2 current',5014,'U16','FIX1'], #0.1A
   #['5015 - MPPT 3 voltage',5015,'U16','FIX1'], #0.1V
   #['5016 - MPPT 3 current',5016,'U16','FIX1'], #0.1A
