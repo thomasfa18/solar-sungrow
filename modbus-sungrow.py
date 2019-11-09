@@ -40,6 +40,11 @@ sungrow_registers = [
   #['5035 - Power factor',5035,'S16','FIX1000'], #0.001
   #['5036 - Grid frequency',5036,'U16','FIX1'], #0.1Hz
   #['5049 - Nominal reactive power',5049,'U16','FIX1'], #kilovariance
+  #['5083 - Meter power',5083,'S32','FIX'], #W
+  #['5085 - Meter A phase power',5085,'S32','FIX'], #W
+  #['5087 - Meter B phase power',5087,'S32','FIX'], #W
+  #['5089 - Meter C phase power',5089,'S32','FIX'], #W
+  #['5097 - Daily import energy',5097,'U32','FIX1'], #0.1kWh
   #['5113 - Daily running time',5113,'U16','Duration'], #minutes
   #['5144 - Total power yields',5144,'U32','FIX1'], #0.1kWh
   #['5146 - Negative voltage to ground',5146,'S16','FIX1'], #0.1V
