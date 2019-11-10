@@ -16,28 +16,28 @@
 
 sungrow_registers = [
   #['4990 ~ 4999 - Serial number',4990,'STR16','ENUM'],
-  #['5001 - Nominal active power',5001,'U16','FIX1'], #0.1kWh
+  #['5001 - Nominal Output power',5001,'U16','FIX1'], #0.1kWh, inverter rating
   #['5003 - Daily power yields',5003,'U16','FIX1'], #0.1kWh
   #['5004 - Total power yields',5004,'U32','FIX0'], #kWh
   #['5006 - Total running time',5006,'U32','Duration'], #hours
-  #['5008 - Internal temperature',5008,'S16','FIX1'], #C
+  ['5008 - Internal temperature',5008,'S16','FIX1'], #C
   #['5009 - Total apparent power',5009,'U32','FIX0'], #VA
   ['5011 - MPPT 1 voltage',5011,'U16','FIX1'], #0.1V
-  #['5012 - MPPT 1 current',5012,'U16','FIX1'], #0.1A
+  ['5012 - MPPT 1 current',5012,'U16','FIX1'], #0.1A
   ['5013 - MPPT 2 voltage',5013,'U16','FIX1'], #0.1V
-  #['5014 - MPPT 2 current',5014,'U16','FIX1'], #0.1A
+  ['5014 - MPPT 2 current',5014,'U16','FIX1'], #0.1A
   #['5015 - MPPT 3 voltage',5015,'U16','FIX1'], #0.1V
   #['5016 - MPPT 3 current',5016,'U16','FIX1'], #0.1A
-  #['5017 - Total DC power',5017,'U32','FIX0'], #Watts
-  #['5019 - Phase A voltage',5019,'U16','FIX1'], #0.1V
+  ['5017 - Total DC power',5017,'U32','FIX0'], #Watts, cumulative power across all MPPTs
+  ['5019 - Phase A voltage',5019,'U16','FIX1'], #0.1V
   #['5020 - Phase B voltage',5020,'U16','FIX1'], #0.1V
   #['5021 - Phase C voltage',5021,'U16','FIX1'], #0.1V
-  #['5022 - Phase A current',5022,'U16','FIX1'], #0.1A
+  ['5022 - Phase A current',5022,'U16','FIX1'], #0.1A
   #['5023 - Phase B current',5023,'U16','FIX1'], #0.1A
   #['5024 - Phase C current',5024,'U16','FIX1'], #0.1A
   ['5031 - Total active power',5031,'U32','FIX0'], #Watts
   #['5033 - Total reactive power',5033,'S32','FIX0'], #variance
-  #['5035 - Power factor',5035,'S16','FIX1000'], #0.001
+  ['5035 - Power factor',5035,'S16','FIX1000'], #0.001
   #['5036 - Grid frequency',5036,'U16','FIX1'], #0.1Hz
   #['5049 - Nominal reactive power',5049,'U16','FIX1'], #kilovariance
   #['5083 - Meter power',5083,'S32','FIX'], #W
