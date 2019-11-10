@@ -62,7 +62,7 @@ sungrow_moddatatype = {
 
 # Load the modbus map from config
 configfile = "/config/" + config.modbus_file
-if pathlib.Path(configfile).is_file():
+if pathlib.Path(configfile + ".py").is_file():
   modmap = __import__(configfile)
   print("Importing modbusmap from /config" )
 else:
