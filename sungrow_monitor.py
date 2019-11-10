@@ -61,6 +61,7 @@ sungrow_moddatatype = {
   }
 
 # Load the modbus map from config
+#TODO: this is still broken and just imports the default
 configfile = "/config/" + config.modbus_file
 if pathlib.Path(configfile).is_file():
   modmap = __import__(configfile)
@@ -180,8 +181,9 @@ count=0
 def main():
   now = datetime.datetime.time(datetime.datetime.now(timezone(config.timezone)))
   if (now > l.sun()['dawn'].time() or now > l.sun()['dusk'].time()):
-      logging.debug("Its night time, I'm going to sleep")
+      print("Its night time, I'm going to sleep")
   else:
+    print("sun is up so checkin registers")
     global count
     try:
       global inverter
