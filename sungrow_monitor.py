@@ -180,7 +180,7 @@ count=0
 #main program loop
 def main():
   now = datetime.datetime.time(datetime.datetime.now(timezone(config.timezone)))
-  if (now > l.sun()['dawn'].time() or now > l.sun()['dusk'].time()):
+  if (now < l.sun()['dawn'].time() or now > l.sun()['dusk'].time()):
       print("Its night time, I'm going to sleep")
   else:
     print("sun is up so checkin registers")
