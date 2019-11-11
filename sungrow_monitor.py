@@ -184,7 +184,9 @@ def main():
   if (now < l.sun()['dawn'].time() or now > l.sun()['dusk'].time()):
     #TODO: math on this to sleep for longer in loop
     #print("Its night time, I'm going to sleep")
+    night = True
   else:
+    night = False
     #print("sun is up so checkin registers")
     global count
     try:
