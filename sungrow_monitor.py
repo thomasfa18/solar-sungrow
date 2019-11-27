@@ -98,13 +98,17 @@ def load_register(registers):
 
   #moved connect to here so it reconnect after a failure
   client.connect()
+
+  #Add timestamp based on PC time rather than inverter time
+  inverter["Date"] = datetime.datetime.now(timezone(config.timezone)).strftime("%Y-%m-%d")
+  inverter["Timestamp"] = datetime.datetime.now(timezone(config.timezone)).strftime("%X")
   #iterate through each avaialble register in the modbus map
   for thisrow in registers:
     name = thisrow[0]
     startPos = thisrow[1]-1 #offset starPos by 1 as zeromode = true seems to do nothing for client
     data_type = thisrow[2]
     format = thisrow[3]
-   
+
     #try and read but handle exception if fails
     try:
       received = client.read_input_registers(address=startPos,
@@ -114,11 +118,9 @@ def load_register(registers):
       thisdate = str(datetime.datetime.now(timezone(config.timezone))).partition('.')[0]
       thiserrormessage = thisdate + ': Connection not possible. Check settings or connection.'
       print(thiserrormessage)
+      #set the field to none and continue
+      displaydata = None
       return
-    
-    #Add timestamp based on PC time rather than inverter time
-    inverter["Date"] = datetime.datetime.now(timezone(config.timezone)).strftime("%Y-%m-%d")
-    inverter["Timestamp"] = datetime.datetime.now(timezone(config.timezone)).strftime("%X")
     
     # 32bit double word data is encoded in Endian.Little, all byte data is in Endian.Big
     if '32' in data_type:
@@ -156,8 +158,12 @@ def load_register(registers):
         displaydata = float(interpreted) / 10
       else:
         displaydata = interpreted
-    
+
+    #write the vluse to the array
     inverter[name] = displaydata
+    
+    #unset the displaydata value
+    displaydata = None
 
 
 #define a loop timer that can account for drift to keep upload in sync
@@ -232,6 +238,7 @@ def main():
     except Exception as err:
       print("[ERROR] %s" % err)
       client.close()
+    #TODO: change this to just a time trigger event and do a recall from spreadsheet to do avg, better yet do it from an internal influxdb call
     #increment counter
     count+=1
     if count >= (60/config.scan_interval) * config.upload_interval and len(power_gen) >= 1 : #possibly spawn thread here and instead make counter be every 5 mins
